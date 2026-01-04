@@ -1,6 +1,6 @@
 // your JS code here.
 
-// Quiz Questions (DO NOT MODIFY FOR TESTS)
+// Quiz Questions
 const questions = [
   {
     question: "What is the capital of France?",
@@ -29,65 +29,67 @@ const questions = [
   },
 ];
 
-// DOM Elements
+// DOM elements
 const questionsElement = document.getElementById("questions");
 const submitBtn = document.getElementById("submit");
 const scoreDiv = document.getElementById("score");
 
-// Load saved progress from sessionStorage
+// Load session storage
 let userAnswers = JSON.parse(sessionStorage.getItem("progress")) || {};
 
-// Load saved score from localStorage (if exists)
+// Load stored score
 const savedScore = localStorage.getItem("score");
 if (savedScore !== null) {
   scoreDiv.textContent = `Your score is ${savedScore} out of 5.`;
 }
 
-// Save answer to sessionStorage
-function saveProgress(questionIndex, answer) {
-  userAnswers[questionIndex] = answer;
+// Save progress
+function saveProgress(index, answer) {
+  userAnswers[index] = answer;
   sessionStorage.setItem("progress", JSON.stringify(userAnswers));
 }
 
-// Render quiz questions
+// Render questions
 function renderQuestions() {
   questionsElement.innerHTML = "";
 
   for (let i = 0; i < questions.length; i++) {
-    const question = questions[i];
+    const q = questions[i];
+    const div = document.createElement("div");
+    div.textContent = q.question;
 
-    const questionDiv = document.createElement("div");
-    questionDiv.textContent = question.question;
-
-    for (let j = 0; j < question.choices.length; j++) {
-      const choice = question.choices[j];
+    for (let j = 0; j < q.choices.length; j++) {
+      const choice = q.choices[j];
 
       const radio = document.createElement("input");
       radio.type = "radio";
       radio.name = `question-${i}`;
       radio.value = choice;
 
-      // Restore checked option after refresh
+      // RESTORE checked attribute (important for Cypress)
       if (userAnswers[i] === choice) {
-        radio.checked = true;
+        radio.setAttribute("checked", "true");
       }
 
-      // Save progress when option is selected
-      radio.addEventListener("change", function () {
+      radio.addEventListener("click", function () {
+        // Remove checked attribute from same question radios
+        document
+          .querySelectorAll(`input[name="question-${i}"]`)
+          .forEach(r => r.removeAttribute("checked"));
+
+        radio.setAttribute("checked", "true");
         saveProgress(i, choice);
       });
 
-      const labelText = document.createTextNode(choice);
-
-      questionDiv.appendChild(radio);
-      questionDiv.appendChild(labelText);
+      div.appendChild(radio);
+      div.appendChild(document.createTextNode(choice));
     }
 
-    questionsElement.appendChild(questionDiv);
+    questionsElement.appendChild(div);
   }
 }
 
-// Submit quiz and calculate score
+// Submit quiz
 submitBtn.addEventListener("click", function () {
   let score = 0;
 
@@ -98,8 +100,8 @@ submitBtn.addEventListener("click", function () {
   }
 
   scoreDiv.textContent = `Your score is ${score} out of 5.`;
-  localStorage.setItem("score", score);
+  localStorage.setItem("score", score.toString());
 });
 
-// Initial render
+// Initial load
 renderQuestions();
